@@ -115,6 +115,9 @@ fodf_peaks = fvtk.peaks(csd_peaks.peak_dirs[:,:,slice], csd_peaks.peak_values[:,
 fvtk.add(ren, fodf_peaks)
 fvtk.show(ren)
 
+# Finally we plan to use the peaks to track.
+
+
 
 # END 
 
