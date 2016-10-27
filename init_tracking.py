@@ -108,4 +108,15 @@ csd_peaks = peaks_from_model(model=csd_model,
                              parallel=True, 
                              nbr_processes=4)
 
+# Next we visualize the peaks in a single brain slice
+ren            = fvtk.ren()
+slice = 85
+fodf_peaks = fvtk.peaks(csd_peaks.peak_dirs[:,:,slice], csd_peaks.peak_values[:,:,slice], scale=1.3)
+fvtk.add(ren, fodf_peaks)
+fvtk.show(ren)
+
+
+# END 
+
+
 
