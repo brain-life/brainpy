@@ -50,7 +50,7 @@ from dipy.viz import fvtk
 from dipy.viz.colormap import line_colors
 
 # We initialize pointers to file paths
-data_path = '/N/dc2/projects/lifebid/HCP7/102311/diffusion_data/'
+data_path = '/N/dc2/projects/lifebid/HCP7/109123/diffusion_data/'
 data_file = data_path + 'data_b1000.nii.gz'
 data_bvec = data_path + 'data_b1000.bvecs'
 data_bval = data_path + 'data_b1000.bvals'
@@ -62,6 +62,7 @@ dmri = nifti_image.get_data()
 affine = nifti_image.affine
 brainmask = nib.load(data_brainmask).get_data()
 
+
 # Load the bvals and bvecs from disk
 # ideally we should use the following:
 #   bvals, bvecs = read_bvals_bvecs(data_bval, data_bvec)
@@ -72,9 +73,39 @@ gtab = gradient_table(bvals, bvecs)
 
 # After loading all files we can start voxel reconstruction
 
-# FRANCO MAKE THIS WORK
-response, ratio = auto_response(gtab, dmri, roi_radius=10, fa_thr=0.6, center)
+# Estimate impulse response for deconvolution (check that the estimation is good)
+# http://nipy.org/dipy/examples_built/reconst_csd.html
+response, ratio = auto_response(gtab, dmri, roi_radius=10, fa_thr=0.6)
 
-# Now we 
+# Build a CSD model kernek
+csd_model = ConstrainedSphericalDeconvModel(gtab, response);
+# Initialize a sphere 
+sphere = get_sphere('repulsion724')
+# The following line estimates a series of coefficients and values of the 
+# ODF. 
+#
+# OUTPUT: 
+#   csd_peaks is an object containing 'peaks_directions', 'peaks_values'
+#   'sph_coeff'
+#
+# INPUTs:
+#   data = diffusion weighted signal volume
+#   sphere = the sphere object will indicate a high-resolution 
+#            sphereical set of points where ODF and all functions 
+#            are evaluated
+#   mask   = brain mask or white matter mask
+#   relative_peak_threshold = the cutoff (proportion max amplitude) 
+#                             of peaks accepted as peak
+#   min_angle_separation    = 
+#   parallel = set processes to use OpenMP
+#   nbr_processes = max number of processes
+csd_peaks = peaks_from_model(model=csd_model,
+                             data=dmri,
+                             sphere=sphere,
+                             mask=brainmask,
+                             relative_peak_threshold=.5,
+                             min_separation_angle=25,
+                             parallel=True, 
+                             nbr_processes=4)
 
 
