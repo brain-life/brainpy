@@ -1,4 +1,3 @@
-
 #==============================================================================
 # '''
 # ==============================================
@@ -11,17 +10,7 @@
 # 
 # '''
 #==============================================================================
-=======
-"""
-==============================================
-Denoise images using Non-Local Means (NLMEANS)
-==============================================
 
-Using the non-local means filter [Coupe2008]_ you can denoise 3D or 4D images and
-boost the SNR of your datasets. You can also decide between modeling the noise
-as Gaussian or Rician (default).
-
-"""
 
 import numpy as np
 import nibabel as nib
@@ -31,27 +20,24 @@ from dipy.denoise.nlmeans import nlmeans
 from dipy.denoise.noise_estimate import estimate_sigma
 
 #from dipy.data import fetch_sherbrooke_3shell, read_sherbrooke_3shell
-1/0
-
 #fetch_sherbrooke_3shell()
 #img, gtab = read_sherbrooke_3shell()
 
 # We initialize pointers to file paths
-data_path = '/N/u/zhangjac/Karst/Dipy/data/Diffusion7T/'
+data_path = '/N/dc2/projects/lifebid/pypi/Copied_hcp_data/Diffusion7T/'
 data_file = data_path + 'data.nii.gz'
 #data_bvec = data_path + 'data_b1000.bvecs'
 #data_bval = data_path + 'data_b1000.bvals'
 #data_brainmask = data_path + 'nodif_brain_mask.nii.gz'
 
 img = nib.load(data_file)
-=======
+
 from dipy.data import fetch_sherbrooke_3shell, read_sherbrooke_3shell
 
 
 fetch_sherbrooke_3shell()
 img, gtab = read_sherbrooke_3shell()
 
->>>>>>> 881649d01be7f38b2884403c3e1d4b82c8e13b15
 data = img.get_data()
 affine = img.get_affine()
 
