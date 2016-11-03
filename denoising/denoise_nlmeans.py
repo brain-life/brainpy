@@ -26,17 +26,8 @@ from dipy.denoise.noise_estimate import estimate_sigma
 # We initialize pointers to file paths
 data_path = '/N/dc2/projects/lifebid/pypi/Copied_hcp_data/Diffusion7T/'
 data_file = data_path + 'data.nii.gz'
-#data_bvec = data_path + 'data_b1000.bvecs'
-#data_bval = data_path + 'data_b1000.bvals'
-#data_brainmask = data_path + 'nodif_brain_mask.nii.gz'
 
 img = nib.load(data_file)
-
-from dipy.data import fetch_sherbrooke_3shell, read_sherbrooke_3shell
-
-
-fetch_sherbrooke_3shell()
-img, gtab = read_sherbrooke_3shell()
 
 data = img.get_data()
 affine = img.get_affine()
