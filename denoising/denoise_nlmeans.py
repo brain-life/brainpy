@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 #==============================================================================
 # '''
 # ==============================================
@@ -22,7 +22,6 @@ boost the SNR of your datasets. You can also decide between modeling the noise
 as Gaussian or Rician (default).
 
 """
->>>>>>> 881649d01be7f38b2884403c3e1d4b82c8e13b15
 
 import numpy as np
 import nibabel as nib
@@ -30,7 +29,7 @@ import matplotlib.pyplot as plt
 from time import time
 from dipy.denoise.nlmeans import nlmeans
 from dipy.denoise.noise_estimate import estimate_sigma
-<<<<<<< HEAD
+
 #from dipy.data import fetch_sherbrooke_3shell, read_sherbrooke_3shell
 1/0
 
