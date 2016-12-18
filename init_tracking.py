@@ -50,11 +50,11 @@ from dipy.viz import fvtk
 from dipy.viz.colormap import line_colors
 
 # We initialize pointers to file paths
-data_path = '/N/dc2/projects/lifebid/HCP7/109123/diffusion_data/'
-data_file = data_path + 'data_b1000.nii.gz'
-data_bvec = data_path + 'data_b1000.bvecs'
-data_bval = data_path + 'data_b1000.bvals'
-data_brainmask = data_path + 'nodif_brain_mask.nii.gz'
+data_path = '/N/dc2/projects/lifebid/2t1/HCP/105115/diffusion_data/'
+data_file = data_path + 'dwi_data_b1000_aligned_trilin.nii.gz'
+data_bvec = data_path + 'dwi_data_b1000_aligned_trilin.bvecs'
+data_bval = data_path + 'dwi_data_b1000_aligned_trilin.bvals'
+data_brainmask = data_path + '../anatomy/' + 'wm_mask_dwi_res.nii.gz'
 
 # Load the data
 nifti_image = nib.load(data_file) 
@@ -67,8 +67,8 @@ brainmask = nib.load(data_brainmask).get_data()
 # ideally we should use the following:
 #   bvals, bvecs = read_bvals_bvecs(data_bval, data_bvec)
 # in practice this data set does not conform to a standard (FSL)
-bvals = np.loadtxt(data_bval, delimiter=',')
-bvecs = np.loadtxt(data_bvec, delimiter=',')
+bvals = np.loadtxt(data_bval)
+bvecs = np.loadtxt(data_bvec)
 gtab = gradient_table(bvals, bvecs)
 
 # After loading all files we can start voxel reconstruction
@@ -79,6 +79,10 @@ response, ratio = auto_response(gtab, dmri, roi_radius=10, fa_thr=0.6)
 
 # Build a CSD model kernek
 csd_model = ConstrainedSphericalDeconvModel(gtab, response);
+
+# Build the Diffusion Tensor Model.
+dt_model = TensorModel(gtab)
+
 # Initialize a sphere 
 sphere = get_sphere('repulsion724')
 # The following line estimates a series of coefficients and values of the 
@@ -107,17 +111,51 @@ csd_peaks = peaks_from_model(model=csd_model,
                              min_separation_angle=25,
                              parallel=True, 
                              nbr_processes=4)
+print('done estimating CSD_peaks')
+
+# Fit the diffusion tensor model to the data
+dt_fit = dt_model.fit(data=dmri, mask=brainmask)
+print('done estimating DTI')
 
 # Next we visualize the peaks in a single brain slice
 ren            = fvtk.ren()
-slice = 85
+slice = 70
 fodf_peaks = fvtk.peaks(csd_peaks.peak_dirs[:,:,slice], csd_peaks.peak_values[:,:,slice], scale=1.3)
 fvtk.add(ren, fodf_peaks)
 fvtk.show(ren)
+ren.azimuth(90)
+fvtk.show(ren)
 
-# Finally we plan to use the peaks to track.
+# We now classify the tissue to decide where to stop tracking.
+from dipy.tracking.local import ThresholdTissueClassifier
+classifier = ThresholdTissueClassifier(dt_fit.fa, .25)
 
+# We will need some seeds for tracking. There are many different functions for seeds.
+# Hereafter we will use seeds from a precomputed mask, for us that mask will be the WM mask
+from dipy.tracking import utils
+seeds = utils.seeds_from_mask(brainmask,density=1)
+seeds_im = fvtk.dots(seeds, (1, 0.5, 0))
+fvtk.add(ren,seeds_im)
 
+# Now we have prepared all we need and we can track
+from dipy.tracking.local import LocalTracking
+
+# Creating the tracking model
+tractogram = LocalTracking(csd_peaks, classifier, seeds, affine=np.eye(4), step_size=.5)
+
+# Tracking
+tractogram = list(tractogram)
+
+# visualzie the streamlines
+tractogram_actor = fvtk.line(tractogram)
+fvtk.rm(ren,fodf_peaks)
+fvtk.rm(ren, seeds_im)
+fvtk.add(ren,tractogram_actor)
+fvtk.show(ren)
+
+# For the next time we will save to disk.
+
+# After that we will do Anatomically Constrained Tracking.
 
 # END 
 
