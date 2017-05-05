@@ -34,34 +34,65 @@
 # Import tools to environment
 import numpy as np
 import nibabel as nib 
+import dipy as dipy
 
 # Load methods from Dipy for tracking and signal voxel reconstruction
 from dipy.reconst.dti   import TensorModel, fractional_anisotropy
 from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
-                                   auto_response)
+                                   auto_response, response_from_mask)
 from dipy.direction import peaks_from_model
 from dipy.tracking.eudx import EuDX
 from dipy.data import get_sphere
 from dipy.io.gradients import read_bvals_bvecs
 from dipy.core.gradients import gradient_table 
-
+from dipy.align.reslice import reslice
 # A few requirements for visualizing the outputs (VTK)
 from dipy.viz import fvtk
 from dipy.viz.colormap import line_colors
 
+from dipy.viz import actor, window
+
 # We initialize pointers to file paths
-data_path = '/N/dc2/projects/lifebid/2t1/HCP/105115/diffusion_data/'
-data_file = data_path + 'dwi_data_b1000_aligned_trilin.nii.gz'
-data_bvec = data_path + 'dwi_data_b1000_aligned_trilin.bvecs'
-data_bval = data_path + 'dwi_data_b1000_aligned_trilin.bvals'
-data_brainmask = data_path + '../anatomy/' + 'wm_mask_dwi_res.nii.gz'
+data_path = '/N/dc2/projects/lifebid/franpest/108323_HCP7T/'
+data_file = data_path + 'Diffusion_7T/'+'data.nii.gz'
+data_bvec = data_path + 'Diffusion_7T/'+'bvecs'
+data_bval = data_path + 'Diffusion_7T/'+'bvals'
+data_brainmask = data_path + 'Diffusion_7T/'+'nodif_brain_mask.nii.gz'
+data_fs_seg = '/N/dc2/projects/lifebid/HCP7/108323/anatomy/aparc.a2009s+aseg.nii.gz'
 
 # Load the data
-nifti_image = nib.load(data_file) 
-dmri = nifti_image.get_data() 
-affine = nifti_image.affine
-brainmask = nib.load(data_brainmask).get_data()
+dmri_image = nib.load(data_file) 
+dmri   = dmri_image.get_data() 
+affine = dmri_image.affine
+brainmask_im = nib.load(data_brainmask)
+brainmask    = brainmask_im.get_data()
+bm_affine = brainmask_im.affine
+aparc_im     = nib.load(data_fs_seg)
+aparc        = aparc_im.get_data()
+aparc_affine = brainmask_im.affine
 
+L = [2, 41, 16, 17, 28, 60, 51, 53, 12, 52, 12, 52, 13, 18,
+     54, 50, 11, 251, 252, 253, 254, 255, 10, 49, 46, 7]
+     
+wm_mask = np.zeros(aparc.shape)
+for l in L:
+    wm_mask[aparc==l] = 1
+
+C = [251, 252, 253, 254, 255]
+callosum = np.zeros(aparc.shape)
+for c in C:
+    callosum[aparc==c] = 1
+
+# reslice the masks to dmri space 
+current_zooms = aparc_im.header.get_zooms()[:3]
+new_zooms     = dmri_image.header.get_zooms()[:3]
+callosum_r, call_r_affine  = reslice(callosum, aparc_affine, 
+                                     current_zooms, 
+                                     new_zooms)
+
+wm_mask_r, wm_mask_r_affine = reslice(wm_mask, aparc_affine,
+                                      current_zooms, 
+                                      new_zooms)
 
 # Load the bvals and bvecs from disk
 # ideally we should use the following:
@@ -69,16 +100,17 @@ brainmask = nib.load(data_brainmask).get_data()
 # in practice this data set does not conform to a standard (FSL)
 bvals = np.loadtxt(data_bval)
 bvecs = np.loadtxt(data_bvec)
-gtab = gradient_table(bvals, bvecs)
+gtab = gradient_table(bvals, bvecs, b0_threshold=100)
 
 # After loading all files we can start voxel reconstruction
 
 # Estimate impulse response for deconvolution (check that the estimation is good)
 # http://nipy.org/dipy/examples_built/reconst_csd.html
-response, ratio = auto_response(gtab, dmri, roi_radius=10, fa_thr=0.6)
+# response, ratio = response_from_mask(gtab, dmri, callosum)
+res, ratio = auto_response (gtab, dmri, fa_thr=0.65)
 
 # Build a CSD model kernek
-csd_model = ConstrainedSphericalDeconvModel(gtab, response);
+csd_model = ConstrainedSphericalDeconvModel(gtab, res);
 
 # Build the Diffusion Tensor Model.
 dt_model = TensorModel(gtab)
@@ -110,7 +142,7 @@ csd_peaks = peaks_from_model(model=csd_model,
                              relative_peak_threshold=.5,
                              min_separation_angle=25,
                              parallel=True, 
-                             nbr_processes=4)
+                             nbr_processes=10)
 print('done estimating CSD_peaks')
 
 # Fit the diffusion tensor model to the data
@@ -159,5 +191,13 @@ fvtk.show(ren)
 
 # END 
 
+def show_slice(volume, affine=None, show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume, affine)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren)
 
 
