@@ -52,12 +52,42 @@ from dipy.viz.colormap import line_colors
 
 from dipy.viz import actor, window
 
+
+def show_slice(volume, affine=None, show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume, affine)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren)
+
+    
+def show_two_slices(volume1, affine1, volume2, affine2=None,
+                    show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume1, affine1)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+
+    slicer_actor2 = actor.slicer(volume2, affine2)
+    slicer_actor2.SetPosition(200, 0, 0)
+    slicer_actor2.display(None, None, k)
+    ren.add(slicer_actor2)
+
+    
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren)    
+    
+    
+
 # We initialize pointers to file paths
 data_path = '/N/dc2/projects/lifebid/franpest/108323_HCP7T/'
-data_file = data_path + 'Diffusion_7T/'+'data.nii.gz'
-data_bvec = data_path + 'Diffusion_7T/'+'bvecs'
-data_bval = data_path + 'Diffusion_7T/'+'bvals'
-data_brainmask = data_path + 'Diffusion_7T/'+'nodif_brain_mask.nii.gz'
+data_file = data_path + 'diffusion_data/'+'data_b2000.nii.gz'
+data_bvec = data_path + 'diffusion_data/'+'data_b2000.bvecs'
+data_bval = data_path + 'diffusion_data/'+'data_b2000.bvals'
+data_brainmask = data_path + 'diffusion_data/'+'nodif_brain_mask.nii.gz'
 data_fs_seg = '/N/dc2/projects/lifebid/HCP7/108323/anatomy/aparc.a2009s+aseg.nii.gz'
 
 # Load the data
@@ -98,8 +128,8 @@ wm_mask_r, wm_mask_r_affine = reslice(wm_mask, aparc_affine,
 # ideally we should use the following:
 #   bvals, bvecs = read_bvals_bvecs(data_bval, data_bvec)
 # in practice this data set does not conform to a standard (FSL)
-bvals = np.loadtxt(data_bval)
-bvecs = np.loadtxt(data_bvec)
+bvals = np.loadtxt(data_bval,delimiter=',')
+bvecs = np.loadtxt(data_bvec,delimiter=',')
 gtab = gradient_table(bvals, bvecs, b0_threshold=100)
 
 # After loading all files we can start voxel reconstruction
@@ -190,14 +220,4 @@ fvtk.show(ren)
 # After that we will do Anatomically Constrained Tracking.
 
 # END 
-
-def show_slice(volume, affine=None, show_axes=False, k=None):
-    ren = window.Renderer()
-    slicer_actor = actor.slicer(volume, affine)
-    slicer_actor.display(None, None, k)
-    ren.add(slicer_actor)
-    if show_axes:
-        ren.add(actor.axes((100, 100, 100)))
-    window.show(ren)
-
 
