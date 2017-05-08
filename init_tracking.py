@@ -190,30 +190,36 @@ fvtk.show(ren)
 
 # We now classify the tissue to decide where to stop tracking.
 from dipy.tracking.local import ThresholdTissueClassifier
-classifier = ThresholdTissueClassifier(dt_fit.fa, .25)
+classifier = ThresholdTissueClassifier(dt_fit.fa, .1)
 
 # We will need some seeds for tracking. There are many different functions for seeds.
 # Hereafter we will use seeds from a precomputed mask, for us that mask will be the WM mask
 from dipy.tracking import utils
-seeds = utils.seeds_from_mask(brainmask,density=1)
+seeds = utils.seeds_from_mask(wm_mask_r, density=1)
 seeds_im = fvtk.dots(seeds, (1, 0.5, 0))
-fvtk.add(ren,seeds_im)
+#fvtk.add(ren,seeds_im)
 
 # Now we have prepared all we need and we can track
 from dipy.tracking.local import LocalTracking
 
 # Creating the tracking model
-tractogram = LocalTracking(csd_peaks, classifier, seeds, affine=np.eye(4), step_size=.5)
+streamlines = LocalTracking(csd_peaks, classifier, seeds, affine=np.eye(4), step_size=.5)
 
 # Tracking
-tractogram = list(tractogram)
+streamlines = list(streamlines)
 
 # visualzie the streamlines
-tractogram_actor = fvtk.line(tractogram)
-fvtk.rm(ren,fodf_peaks)
-fvtk.rm(ren, seeds_im)
-fvtk.add(ren,tractogram_actor)
+streamlines_actor = fvtk.line(streamlines[:100000])
+#fvtk.rm(ren,fodf_peaks)
+#fvtk.rm(ren, seeds_im)
+fvtk.add(ren,streamlines_actor)
 fvtk.show(ren)
+
+from nibabel.streamlines import Tractogram, save
+
+tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
+
+save(tractogram, 'test.trk')
 
 # For the next time we will save to disk.
 
