@@ -52,6 +52,36 @@ from dipy.viz.colormap import line_colors
 
 from dipy.viz import actor, window
 
+
+def show_slice(volume, affine=None, show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume, affine)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren)
+
+    
+def show_two_slices(volume1, affine1, volume2, affine2=None,
+                    show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume1, affine1)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+
+    slicer_actor2 = actor.slicer(volume2, affine2)
+    slicer_actor2.SetPosition(200, 0, 0)
+    slicer_actor2.display(None, None, k)
+    ren.add(slicer_actor2)
+
+    
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren)    
+    
+    
+
 # We initialize pointers to file paths
 data_path = '/N/dc2/projects/lifebid/franpest/108323_HCP7T/'
 data_file = data_path + 'diffusion_data/'+'data_b2000.nii.gz'
@@ -190,14 +220,4 @@ fvtk.show(ren)
 # After that we will do Anatomically Constrained Tracking.
 
 # END 
-
-def show_slice(volume, affine=None, show_axes=False, k=None):
-    ren = window.Renderer()
-    slicer_actor = actor.slicer(volume, affine)
-    slicer_actor.display(None, None, k)
-    ren.add(slicer_actor)
-    if show_axes:
-        ren.add(actor.axes((100, 100, 100)))
-    window.show(ren)
-
 
