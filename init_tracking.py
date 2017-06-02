@@ -59,7 +59,9 @@ data_file = data_path + 'diffusion_data/'+'data.nii.gz'
 data_bvec = data_path + 'diffusion_data/'+'data.bvec'
 data_bval = data_path + 'diffusion_data/'+'data.bval'
 data_brainmask = data_path + 'diffusion_data/'+'nodif_brain_mask.nii.gz'
-data_fs_seg    = data_path + 'anatomy/freesurfer/mri/aparc+aseg.nii.gz'
+
+fs_path = '/N/dc2/projects/lifebid/HCP/Brent/7t_rerun/freesurfer/7t_108323'
+data_fs_seg    = fs_path + '/mri/aparc+aseg+LAS.nii.gz'
 
 # Load the data
 dmri_image   = nib.load(data_file) 
@@ -86,16 +88,22 @@ for c in callosal_regions:
     callosum[aparc==c] = 1
 
 # reslice the masks to dmri space 
-current_zooms = aparc_im.header.get_zooms()[:3]
-new_zooms     = dmri_image.header.get_zooms()[:3]
-callosum_r, call_r_affine  = reslice(callosum, aparc_affine, 
-                                     current_zooms, 
-                                     new_zooms)
+#current_zooms = aparc_im.header.get_zooms()[:3]
+#new_zooms     = dmri_image.header.get_zooms()[:3]
+#callosum_r, call_r_affine  = reslice(callosum, aparc_affine, 
+#                                     current_zooms, 
+#                                     new_zooms)
 
-wm_mask_r, wm_mask_r_affine = reslice(wm_mask, aparc_affine,
-                                      current_zooms, 
-                                      new_zooms)
-show_two_slices(dmri_image, callosum_r, affine, call_r_affine):
+#wm_mask_r, wm_mask_r_affine = reslice(wm_mask, aparc_affine,
+#                                      current_zooms, 
+#                                      new_zooms)
+
+show_two_slices(volume1=dmri[...,2],  
+                affine1=affine, 
+                volume2=wm_mask, 
+                affine2=aparc_affine,
+                show_axes=True,
+                shift=200, opacity=[0.8, 0.7])
     
 # Load the bvals and bvecs from disk
 # ideally we should use the following:
@@ -194,17 +202,21 @@ def show_slice(volume, affine=None, show_axes=False, k=None):
 
     
 def show_two_slices(volume1, affine1, volume2, affine2=None,
-                    show_axes=False, k=None):
+                    show_axes=False, k=None, shift=None, opacity=[0.8, 0.4]):
     ren = window.Renderer()
     slicer_actor = actor.slicer(volume1, affine1)
     slicer_actor.display(None, None, k)
     ren.add(slicer_actor)
 
     slicer_actor2 = actor.slicer(volume2, affine2)
-    slicer_actor2.SetPosition(200, 0, 0)
+    if shift is not None:
+        slicer_actor2.SetPosition(shift, 0, 0)
     slicer_actor2.display(None, None, k)
     ren.add(slicer_actor2)
 
+    if opacity is not None:
+        slicer_actor.opacity(opacity[0])
+        slicer_actor2.opacity(opacity[1])
     
     if show_axes:
         ren.add(actor.axes((100, 100, 100)))
