@@ -53,64 +53,36 @@ from dipy.viz.colormap import line_colors
 from dipy.viz import actor, window
 
 
-def show_slice(volume, affine=None, show_axes=False, k=None):
-    ren = window.Renderer()
-    slicer_actor = actor.slicer(volume, affine)
-    slicer_actor.display(None, None, k)
-    ren.add(slicer_actor)
-    if show_axes:
-        ren.add(actor.axes((100, 100, 100)))
-    window.show(ren)
-
-    
-def show_two_slices(volume1, affine1, volume2, affine2=None,
-                    show_axes=False, k=None):
-    ren = window.Renderer()
-    slicer_actor = actor.slicer(volume1, affine1)
-    slicer_actor.display(None, None, k)
-    ren.add(slicer_actor)
-
-    slicer_actor2 = actor.slicer(volume2, affine2)
-    slicer_actor2.SetPosition(200, 0, 0)
-    slicer_actor2.display(None, None, k)
-    ren.add(slicer_actor2)
-
-    
-    if show_axes:
-        ren.add(actor.axes((100, 100, 100)))
-    window.show(ren)    
-    
-    
-
 # We initialize pointers to file paths
-data_path = '/N/dc2/projects/lifebid/franpest/108323_HCP7T/'
-data_file = data_path + 'diffusion_data/'+'data_b2000.nii.gz'
-data_bvec = data_path + 'diffusion_data/'+'data_b2000.bvecs'
-data_bval = data_path + 'diffusion_data/'+'data_b2000.bvals'
+data_path = '/N/dc2/projects/lifebid/HCP7/108323/'
+data_file = data_path + 'diffusion_data/'+'data.nii.gz'
+data_bvec = data_path + 'diffusion_data/'+'data.bvec'
+data_bval = data_path + 'diffusion_data/'+'data.bval'
 data_brainmask = data_path + 'diffusion_data/'+'nodif_brain_mask.nii.gz'
-data_fs_seg = '/N/dc2/projects/lifebid/HCP7/108323/anatomy/aparc.a2009s+aseg.nii.gz'
+data_fs_seg    = data_path + 'anatomy/freesurfer/mri/aparc+aseg.nii.gz'
 
 # Load the data
-dmri_image = nib.load(data_file) 
-dmri   = dmri_image.get_data() 
-affine = dmri_image.affine
+dmri_image   = nib.load(data_file) 
+dmri         = dmri_image.get_data() 
+affine       = dmri_image.affine
 brainmask_im = nib.load(data_brainmask)
 brainmask    = brainmask_im.get_data()
-bm_affine = brainmask_im.affine
+bm_affine    = brainmask_im.affine
 aparc_im     = nib.load(data_fs_seg)
 aparc        = aparc_im.get_data()
 aparc_affine = brainmask_im.affine
 
-L = [2, 41, 16, 17, 28, 60, 51, 53, 12, 52, 12, 52, 13, 18,
+# Freesurfer parecellation ROIs
+wm_regions = [2, 41, 16, 17, 28, 60, 51, 53, 12, 52, 12, 52, 13, 18,
      54, 50, 11, 251, 252, 253, 254, 255, 10, 49, 46, 7]
      
 wm_mask = np.zeros(aparc.shape)
-for l in L:
+for l in wm_regions:
     wm_mask[aparc==l] = 1
 
-C = [251, 252, 253, 254, 255]
+callosal_regions = [255]
 callosum = np.zeros(aparc.shape)
-for c in C:
+for c in callosal_regions:
     callosum[aparc==c] = 1
 
 # reslice the masks to dmri space 
@@ -123,13 +95,14 @@ callosum_r, call_r_affine  = reslice(callosum, aparc_affine,
 wm_mask_r, wm_mask_r_affine = reslice(wm_mask, aparc_affine,
                                       current_zooms, 
                                       new_zooms)
-
+show_two_slices(dmri_image, callosum_r, affine, call_r_affine):
+    
 # Load the bvals and bvecs from disk
 # ideally we should use the following:
 #   bvals, bvecs = read_bvals_bvecs(data_bval, data_bvec)
 # in practice this data set does not conform to a standard (FSL)
 bvals = np.loadtxt(data_bval,delimiter=',')
-bvecs = np.loadtxt(data_bvec,delimiter=',')
+bvecs = np.loadtxt(data_bvec).T
 gtab = gradient_table(bvals, bvecs, b0_threshold=100)
 
 # After loading all files we can start voxel reconstruction
@@ -137,7 +110,7 @@ gtab = gradient_table(bvals, bvecs, b0_threshold=100)
 # Estimate impulse response for deconvolution (check that the estimation is good)
 # http://nipy.org/dipy/examples_built/reconst_csd.html
 # response, ratio = response_from_mask(gtab, dmri, callosum)
-res, ratio = auto_response (gtab, dmri, fa_thr=0.65)
+res, ratio = response_from_mask (gtab, dmri, callosum_r)
 
 # Build a CSD model kernek
 csd_model = ConstrainedSphericalDeconvModel(gtab, res);
@@ -147,24 +120,8 @@ dt_model = TensorModel(gtab)
 
 # Initialize a sphere 
 sphere = get_sphere('repulsion724')
-# The following line estimates a series of coefficients and values of the 
-# ODF. 
-#
-# OUTPUT: 
-#   csd_peaks is an object containing 'peaks_directions', 'peaks_values'
-#   'sph_coeff'
-#
-# INPUTs:
-#   data = diffusion weighted signal volume
-#   sphere = the sphere object will indicate a high-resolution 
-#            sphereical set of points where ODF and all functions 
-#            are evaluated
-#   mask   = brain mask or white matter mask
-#   relative_peak_threshold = the cutoff (proportion max amplitude) 
-#                             of peaks accepted as peak
-#   min_angle_separation    = 
-#   parallel = set processes to use OpenMP
-#   nbr_processes = max number of processes
+
+# Find fiber-peaks from the CSD fit
 csd_peaks = peaks_from_model(model=csd_model,
                              data=dmri,
                              sphere=sphere,
@@ -224,6 +181,34 @@ save(tractogram, 'test.trk')
 # For the next time we will save to disk.
 
 # After that we will do Anatomically Constrained Tracking.
+
+
+def show_slice(volume, affine=None, show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume, affine)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren)
+
+    
+def show_two_slices(volume1, affine1, volume2, affine2=None,
+                    show_axes=False, k=None):
+    ren = window.Renderer()
+    slicer_actor = actor.slicer(volume1, affine1)
+    slicer_actor.display(None, None, k)
+    ren.add(slicer_actor)
+
+    slicer_actor2 = actor.slicer(volume2, affine2)
+    slicer_actor2.SetPosition(200, 0, 0)
+    slicer_actor2.display(None, None, k)
+    ren.add(slicer_actor2)
+
+    
+    if show_axes:
+        ren.add(actor.axes((100, 100, 100)))
+    window.show(ren) 
 
 # END 
 
