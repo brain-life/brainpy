@@ -38,7 +38,6 @@ def show_two_slices(volume1, affine1, volume2, affine2=None,
     window.show(ren) 
 
 def show_streamlines(streamlines, affine):
-    
     ren = window.Renderer()
     line_actor = actor.line(streamlines)
     ren.add(line_actor)
@@ -65,7 +64,7 @@ aparc_im = nib.load(data_fs_seg)
 aparc = aparc_im.get_data()
 aparc_affine = brainmask_im.affine
 
-print('Loaded Files')
+print('Loaded Files12')
 
 # Create the white matter and callosal masks
 wm_regions = [2, 41, 16, 17, 28, 60, 51, 53, 12, 52, 12, 52, 13, 18,
@@ -114,7 +113,7 @@ from dipy.tracking.local import ThresholdTissueClassifier
 
 classifier = ThresholdTissueClassifier(csa_peaks.gfa, .1)
 
-print('Created Threshold Tissue classifer')
+print('Created Tissue classifer')
 
 # Begins the seed in the wm tracts
 seeds = utils.seeds_from_mask(wm_mask, density=[1, 1, 1], affine=affine)
@@ -129,10 +128,31 @@ streamlines = LocalTracking(csa_peaks, classifier, seeds, affine, step_size=.5)
 # Compute streamlines and store as a list.
 streamlines = list(streamlines)
 
+# Form an image with the streamlines
+color = line_colors(streamlines)
+print("Making pretty pictures")
+if fvtk.have_vtk:
+    streamlines_actor = fvtk.line(streamlines, line_colors(streamlines))
+
+    # Create the 3d display.
+    r = fvtk.ren()
+    fvtk.add(r, streamlines_actor)
+
+    # Save still images for this static example.
+    fvtk.record(r, n_frames=1, out_path='deterministic.png',
+                size=(800, 800))
+print ('Made pretty pictures')
+
 # Save it as a trk file for vis
-from dipy.io.streamlines import save, Tractogram
-save(Tractogram(streamlines, affine), 'csa_detr.trk')
-print('End the deterministic model')
+#from dipy.io.* import save, Tractogram
+#save(Tractogram(streamlines, affine), 'csa_detr.trk')
+#print('End the deterministic model')
+
+from nibabel.streamlines import Tractogram, save
+
+tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
+save(tractogram, 'csa_detr.trk')
+print("Created the trk file")
 
 ##The probabilistic model##
 
@@ -160,14 +180,14 @@ print('Created the Tissue Classifier')
 
 streamlines = LocalTracking(prob_dg, classifier, seeds, affine,
                             step_size=.5, max_cross=1)
+print('Created the probabilistic model')
 
 # Compute streamlines and store as a list.
 streamlines = list(streamlines)
 
 # Prepare the display objects.
-print('Making pretty pictures')
 color = line_colors(streamlines)
-
+print("Making pretty pictures")
 if fvtk.have_vtk:
     streamlines_actor = fvtk.line(streamlines, line_colors(streamlines))
 
@@ -179,4 +199,8 @@ if fvtk.have_vtk:
     fvtk.record(r, n_frames=1, out_path='probabilistic.png',
                 size=(800, 800))
 print ('Made pretty pictures')
-save_trk("CSD_prob.trk", streamlines, affine)
+
+tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
+save(tractogram, 'csa_prob.trk')
+print("Created the trk file")
+
