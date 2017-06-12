@@ -64,7 +64,7 @@ aparc_im = nib.load(data_fs_seg)
 aparc = aparc_im.get_data()
 aparc_affine = brainmask_im.affine
 
-print('Loaded Files12')
+print('Loaded Files123')
 
 # Create the white matter and callosal masks
 wm_regions = [2, 41, 16, 17, 28, 60, 51, 53, 12, 52, 12, 52, 13, 18,
@@ -128,6 +128,7 @@ streamlines = LocalTracking(csa_peaks, classifier, seeds, affine, step_size=.5)
 # Compute streamlines and store as a list.
 streamlines = list(streamlines)
 
+"""
 # Form an image with the streamlines
 color = line_colors(streamlines)
 print("Making pretty pictures")
@@ -142,6 +143,7 @@ if fvtk.have_vtk:
     fvtk.record(r, n_frames=1, out_path='deterministic.png',
                 size=(800, 800))
 print ('Made pretty pictures')
+"""
 
 # Save it as a trk file for vis
 #from dipy.io.* import save, Tractogram
@@ -157,7 +159,7 @@ print("Created the trk file")
 ##The probabilistic model##
 
 # Create a CSD model to measure Fiber Orientation Dist
-print('Begin the probabilsitic model')
+print('Begin the probabilistic model')
 from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
 response, ratio = auto_response(gtab, dmri, roi_radius=10, fa_thr=0.7)
@@ -185,6 +187,7 @@ print('Created the probabilistic model')
 # Compute streamlines and store as a list.
 streamlines = list(streamlines)
 
+"""
 # Prepare the display objects.
 color = line_colors(streamlines)
 print("Making pretty pictures")
@@ -199,8 +202,8 @@ if fvtk.have_vtk:
     fvtk.record(r, n_frames=1, out_path='probabilistic.png',
                 size=(800, 800))
 print ('Made pretty pictures')
+"""
 
 tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
 save(tractogram, 'csa_prob.trk')
 print("Created the trk file")
-
