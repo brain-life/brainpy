@@ -1,6 +1,10 @@
 import time
 from dipy.tracking.local import LocalTracking
 import csd_peaks, create_classifier, create_seeds, load_file
+from nibabel.streamlines import Tractogram, save
+from dipy.viz import fvtk
+from dipy.viz.colormap import line_colors
+
 
 def compute_streamlines(peaks, classifier, seeds, affine):
     # Initialization of LocalTracking. The computation happens in the next step.
@@ -14,9 +18,40 @@ def compute_streamlines(peaks, classifier, seeds, affine):
     print("Computed streamlines " + str((end - start)))
     return streamlines
 
+def create_trk(streamlines, affine, name):
+    start = time.time()
+    tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
+    save(tractogram, name + '.trk')
+    end = time.time()
+    print("Created the trk file: " + str((end - start)))
+
+def make_picture(name, streamlines):
+    # Prepare the display objects.
+    start = time.time()
+    print("Making pretty pictures")
+    if fvtk.have_vtk:
+        streamlines_actor = fvtk.line(streamlines, line_colors(streamlines))
+
+        # Create the 3d display.
+        r = fvtk.ren()
+        fvtk.add(r, streamlines_actor)
+
+        # Save still images for this static example.
+        fvtk.record(r, n_frames=1, out_path=name + '.png',
+                    size=(800, 800))
+    end = time.time()
+    print ('Made pretty pictures: ' + str((end - start)))
+
+
 def streamlines():
     peaks = csd_peaks.csd_peaks()
     classifier = create_classifier.classifier()
     seeds = create_seeds.seeds()
     d = load_file.load_files()
-    return compute_streamlines(peaks, classifier, seeds, load_file.load_affine(d.data_file))
+    affine = load_file.load_affine(d.data_file)
+    streamlines = compute_streamlines(peaks, classifier, seeds, affine)
+    create_trk(streamlines=streamlines, affine=affine, name='prob')
+    make_picture('prob', streamlines=streamlines)
+
+
+
