@@ -8,7 +8,6 @@ from dipy.viz import fvtk
 from dipy.viz.colormap import line_colors
 import numpy as np
 
-
 def compute_streamlines(peaks, classifier, seeds, affine):
     # Initialization of LocalTracking. The computation happens in the next step.
     start = time.time()
@@ -45,13 +44,12 @@ def make_picture(name, streamlines):
     end = time.time()
     print ('Made pretty pictures: ' + str((end - start)))
 
-
 def streamlines():
     load_file.load_files()
     seeds = create_seeds.seeds()
     pdg = prob_dg.prob_dg()
     classifier = create_classifier.classifier()
-    files = np.load('files')
+    files = np.load('files.npz')
     affine = files['affine']
     streamlines = compute_streamlines(peaks=pdg, classifier=classifier, seeds=seeds, affine=affine)
     create_trk(streamlines=streamlines, affine=affine, name='prob')

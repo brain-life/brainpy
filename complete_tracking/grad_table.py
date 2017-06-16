@@ -16,3 +16,4 @@ def grad_table():
     with open('config.json') as config_json:
         config = json.load(config_json)
     return create_gradient_table(config['data_bval'], config['data_bvec'])
+

@@ -8,7 +8,7 @@ def load_dmri(data_file):
     start = time.time()
     dmri_image = nib.load(data_file)
     print("Loaded dmri: " + str(time.time() - start))
-    return dmri_image.get_data()
+    return dmri_image
 
 def load_aparc(data_fs_seg):
     # Loads the segmentation file
@@ -38,8 +38,9 @@ def load_files():
     #Data_path = collections.namedtuple("Data_path", ['data_path', 'data_file', 'fs_path', 'data_fs_seg', 'data_bval', 'data_bvec'])
     #d = Data_path(data_path=data_path, data_file=data_file, fs_path=fs_path, data_fs_seg=data_fs_seg, data_bval=data_bval, data_bvec=data_bvec)
 
-    dmri = load_dmri(config['data_file'])
-    affine = dmri.affine
+    dmri_image = load_dmri(config['data_file'])
+    dmri = dmri_image.get_data()
+    affine = dmri_image.affine
     aparc = load_aparc(config['data_fs_seg'])
 
     np.savez_compressed('files', dmri=dmri, affine=affine, aparc=aparc)

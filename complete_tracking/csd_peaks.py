@@ -18,6 +18,8 @@ def create_peaks(model, dmri, wm_mask):
 
 def csd_peaks():
     model = create_csd.create_csd()
-    wm_mask = create_mask.create_wm_mask()
-    files = np.load('files')
+    wm_mask = create_mask.mask()
+    files = np.load('files.npz')
     return create_peaks(model, files['dmri'], wm_mask)
+
+

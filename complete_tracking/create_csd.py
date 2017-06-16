@@ -14,5 +14,7 @@ def create_CSD_model(gtab, dmri):
     return csd_model
 
 def create_csd():
-    files = np.load('files')
+    files = np.load('files.npz')
     return create_CSD_model(grad_table.grad_table(), files['dmri'])
+
+

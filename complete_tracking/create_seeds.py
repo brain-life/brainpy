@@ -13,5 +13,6 @@ def create_wm_seeds(wm_mask, affine):
 
 def seeds():
     wm_mask = create_mask.mask()
-    files = np.load('files')
+    files = np.load('files.npz')
     return create_wm_seeds(wm_mask, files['affine'])
+
