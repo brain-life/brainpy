@@ -119,7 +119,7 @@ def create_wm_mask(aparc):
     return wm_mask
 
 
-def create_callosal_mask(aparc, callosal_regions):
+def create_callosal_mask(data_fs_seg):
     # Create the callosal mask
     start = time.time()
     aparc_im = nib.load(data_fs_seg)
@@ -321,13 +321,14 @@ def main(det):
     # Create gradient table
     gtab = create_gradient_table(data_bval, data_bvec)
 
-    if det:
-        # Create CSA model & peaks
-        csa_model = create_CSA_model(gtab)
-        csa_peaks = create_peaks(csa_model, dmri, wm_mask)
+    # Create CSA model & peaks
+    csa_model = create_CSA_model(gtab)
+    csa_peaks = create_peaks(csa_model, dmri, wm_mask)
 
-        # Create classifier
-        classifier = create_classifier(csa_peaks)
+    # Create classifier
+    classifier = create_classifier(csa_peaks)
+
+    if det:
 
         # Create seeds
         seeds = create_wm_seeds(wm_mask, affine)
@@ -344,13 +345,9 @@ def main(det):
     else:
         # Create CSD model
         csd_model = create_CSD_model(gtab, dmri)
-        csd_peaks = create_peaks(csd_model, dmri, wm_mask)
 
         # Create the probabilistic direction getter
         prob_dg = prob_direction_getter(csd_model, dmri, wm_mask)
-
-        # Create classifier
-        classifier = create_classifier(csd_peaks)
 
         # Create seeds
         seeds = create_wm_seeds(wm_mask, affine)
