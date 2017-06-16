@@ -12,5 +12,3 @@ def create_classifier(peaks):
 
 def classifier():
     return create_classifier(csd_peaks.csd_peaks())
-clas = classifier()
-print(type(clas))

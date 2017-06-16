@@ -4,7 +4,7 @@ from dipy.data import default_sphere
 import create_csd
 import create_mask
 import numpy as np
-from dipy.io.peaks import save_peaks
+from dipy.io.peaks import save_peaks, load_peaks
 
 def create_peaks(model, dmri, wm_mask):
     # Find the peaks from the CSA model
@@ -16,7 +16,11 @@ def create_peaks(model, dmri, wm_mask):
     end = time.time()
     save_peaks(peaks)
     print('Created peaks: ' + str(end-start))
-    return peaks
+    save_peaks('peaks.pam5', peaks)
+    print('Saved peaks')
+    peaks1 = load_peaks('peaks.pam5')
+    print('Load peaks')
+    return peaks1
 
 def csd_peaks():
     model = create_csd.create_csd()
@@ -24,5 +28,7 @@ def csd_peaks():
     files = np.load('files.npz')
 
     return create_peaks(model, files['dmri'], wm_mask)
+
+peaks = csd_peaks()
 
 
