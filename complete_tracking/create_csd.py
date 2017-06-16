@@ -1,7 +1,7 @@
 import time
 from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
-import load_file
+import numpy as np
 import grad_table
 
 def create_CSD_model(gtab, dmri):
@@ -14,5 +14,7 @@ def create_CSD_model(gtab, dmri):
     return csd_model
 
 def create_csd():
-    d = load_file.load_files()
-    return create_CSD_model(grad_table.grad_table(), load_file.load_dmri(d.data_file))
+    files = np.load('files.npz')
+    return create_CSD_model(grad_table.grad_table(), files['dmri'])
+
+

@@ -1,6 +1,7 @@
 import time
 from dipy.tracking import utils
-import create_mask, load_file
+import create_mask
+import numpy as np
 
 def create_wm_seeds(wm_mask, affine):
     # Begins the seed in the wm tracts
@@ -11,6 +12,7 @@ def create_wm_seeds(wm_mask, affine):
     return seeds
 
 def seeds():
-    d = load_file.load_files()
     wm_mask = create_mask.mask()
-    return create_wm_seeds(wm_mask, load_file.load_affine(d.data_file))
+    files = np.load('files.npz')
+    return create_wm_seeds(wm_mask, files['affine'])
+

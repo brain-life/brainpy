@@ -16,5 +16,7 @@ def create_wm_mask(aparc):
     return wm_mask
 
 def mask():
-    d = load_file.load_files()
-    return create_wm_mask(load_file.load_aparc(d.data_fs_seg))
+    files = np.load('files.npz')
+    return create_wm_mask(files['aparc'])
+
+
