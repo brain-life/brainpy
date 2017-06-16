@@ -1,7 +1,8 @@
 import time
 from dipy.data import default_sphere
 from dipy.direction import ProbabilisticDirectionGetter
-import create_csd, load_file, create_mask
+import create_csd, create_mask
+import numpy as np
 
 def prob_direction_getter(csd_model, dmri, wm_mask):
     # Set the Direction Getter to randomly choose directions
@@ -15,8 +16,8 @@ def prob_direction_getter(csd_model, dmri, wm_mask):
     return prob_dg
 
 def prob_dg():
-    d = load_file.load_files()
     model = create_csd.create_csd()
     wm_mask = create_mask.mask()
-    prob_dg = prob_direction_getter(model, load_file.load_dmri(d.data_file), wm_mask)
+    files = np.load('files')
+    prob_dg = prob_direction_getter(model, files['dmri'], wm_mask)
     return prob_dg

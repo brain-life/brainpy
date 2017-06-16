@@ -1,7 +1,7 @@
 import time
 from dipy.core.gradients import gradient_table
 from dipy.io.gradients import read_bvals_bvecs
-import load_file
+import json
 
 def create_gradient_table(data_bval, data_bvec):
     # Create the gradient table from the bvals and bvecs
@@ -13,5 +13,6 @@ def create_gradient_table(data_bval, data_bvec):
     return gtab
 
 def grad_table():
-    d = load_file.load_files()
-    return create_gradient_table(d.data_bval, d.data_bvec)
+    with open('config.json') as config_json:
+        config = json.load(config_json)
+    return create_gradient_table(config['data_bval'], config['data_bvec'])

@@ -1,9 +1,9 @@
 import time
 from dipy.direction import peaks_from_model
 from dipy.data import default_sphere
-import load_file
 import create_csd
 import create_mask
+import numpy as np
 
 def create_peaks(model, dmri, wm_mask):
     # Find the peaks from the CSA model
@@ -17,8 +17,7 @@ def create_peaks(model, dmri, wm_mask):
     return peaks
 
 def csd_peaks():
-    d = load_file.load_files()
     model = create_csd.create_csd()
     wm_mask = create_mask.create_wm_mask()
-
-    return create_peaks(model, load_file.load_dmri(d.data_file), wm_mask)
+    files = np.load('files')
+    return create_peaks(model, files['dmri'], wm_mask)
