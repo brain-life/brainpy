@@ -107,7 +107,7 @@ def load_dmri(data_file):
     start = time.time()
     dmri_image = nib.load(data_file)
     print("Loaded dmri: " + str(time.time() - start))
-    return dmri_image.get_data()
+    return dmri_image
 
 
 # def load_affine(data_file):
@@ -212,6 +212,7 @@ def prob_direction_getter(csd_model, dmri, wm_mask):
     # Set the Direction Getter to randomly choose directions
     start = time.time()
     csd_fit = csd_model.fit(dmri, mask=wm_mask)
+    print(type(csd_fit))
     prob_dg = ProbabilisticDirectionGetter.from_shcoeff(csd_fit.shm_coeff,
                                                         max_angle=30.,
                                                         sphere=default_sphere)
@@ -256,7 +257,6 @@ def create_trk(streamlines, affine, name):
     end = time.time()
     print("Created the trk file: " + str((end - start)))
 
-
 def main(det=False):
     start = time.time()
     data_path = '/N/dc2/projects/lifebid/HCP7/108323/'
@@ -269,8 +269,9 @@ def main(det=False):
     print('Set paths: ' + str(time.time() - start))
 
     # Load the data
-    dmri = load_dmri(data_file)
-    affine = dmri.affine
+    dmri_image = load_dmri(data_file)
+    dmri = dmri_image.get_data()
+    affine = dmri_image.affine
     aparc = load_aparc(data_fs_seg)
 
     # Create masks

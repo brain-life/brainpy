@@ -162,7 +162,7 @@ print("Created the trk file: " + str((end - start)))
 
 start = time.time()
 # Create a CSD model to measure Fiber Orientation Dist
-print('Begin the probabilistic model ' + str(time.time() - start))
+print('Begin the probabilistic model')
 from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
 
