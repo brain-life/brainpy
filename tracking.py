@@ -15,6 +15,7 @@ from nibabel.streamlines import Tractogram, save
 from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
 from dipy.direction import ProbabilisticDirectionGetter
+from dipy.io.peaks import save_peaks
 
 
 def show_slice(volume, affine=None, show_axes=False, k=None):
@@ -189,13 +190,18 @@ def compute_streamlines(peaks, classifier, seeds, affine):
     # Initialization of LocalTracking. The computation happens in the next step.
     start = time.time()
     streamlines = LocalTracking(peaks, classifier, seeds, affine, step_size=.5)
-
+    print('Initialized LocalTracking ' + str(time.time() - time))
     # Compute streamlines and store as a list.
     streamlines = list(streamlines)
     print("Number of streamlines " + str(len(streamlines)))
     end = time.time()
     print("Computed streamlines " + str((end - start)))
-    return streamlines
+    #return streamlines
+    start = time.time()
+    tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
+    save(tractogram, 'csa_prob.trk')
+    end = time.time()
+    print("Created the trk file: " + str((end - start)))
 
 
 """
@@ -298,7 +304,7 @@ def make_picture(name, streamlines):
     print ('Made pretty pictures: ' + str((end - start)))
 
 
-def main(det):
+def main(det=False):
     start = time.time()
     data_path = '/N/dc2/projects/lifebid/HCP7/108323/'
     data_file = data_path + 'original_hcp_data/Diffusion_7T/' + 'data.nii.gz'
@@ -328,11 +334,10 @@ def main(det):
     # Create classifier
     classifier = create_classifier(csa_peaks)
 
+    # Create seeds
+    seeds = create_wm_seeds(wm_mask, affine)
+
     if det:
-
-        # Create seeds
-        seeds = create_wm_seeds(wm_mask, affine)
-
         # Compute streamlines
         streamlines = compute_streamlines(peaks=csa_peaks, classifier=classifier, seeds=seeds, affine=affine)
 
@@ -349,9 +354,6 @@ def main(det):
         # Create the probabilistic direction getter
         prob_dg = prob_direction_getter(csd_model, dmri, wm_mask)
 
-        # Create seeds
-        seeds = create_wm_seeds(wm_mask, affine)
-
         # Compute streamlines
         streamlines = compute_streamlines(peaks=prob_dg, classifier=classifier, seeds=seeds, affine=affine)
 
@@ -365,4 +367,4 @@ def main(det):
     print('Finished!' + (end - start))
 
 
-main(det=False)
+main()
