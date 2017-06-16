@@ -16,28 +16,7 @@ from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
 from dipy.direction import ProbabilisticDirectionGetter
 
-"""
-# Form an image with the streamlines
-color = line_colors(streamlines)
-print("Making pretty pictures")
-if fvtk.have_vtk:
-    streamlines_actor = fvtk.line(streamlines, line_colors(streamlines))
 
-    # Create the 3d display.
-    r = fvtk.ren()
-    fvtk.add(r, streamlines_actor)
-
-    # Save still images for this static example.
-    fvtk.record(r, n_frames=1, out_path='deterministic.png',
-                size=(800, 800))
-print ('Made pretty pictures')
-
-# Save it as a trk file for vis
-from dipy.io.* import save, Tractogram
-save(Tractogram(streamlines, affine), 'csa_detr.trk')
-save(Tractogram(streamlines, affine), 'csa_detr.trk')
-print('End the deterministic model')
-"""
 def show_slice(volume, affine=None, show_axes=False, k=None):
     ren = window.Renderer()
     slicer_actor = actor.slicer(volume, affine)
@@ -107,15 +86,15 @@ def load_dmri(data_file):
     start = time.time()
     dmri_image = nib.load(data_file)
     print("Loaded dmri: " + str(time.time() - start))
-    return dmri_image
+    return dmri_image.get_data()
 
 
-# def load_affine(data_file):
-#     # Load affine
-#     start = time.time()
-#     dmri_image = nib.load(data_file)
-#     print("Loaded affine: " + str(time.time() - start))
-#     return dmri_image.affine
+def load_affine(data_file):
+    # Load affine
+    start = time.time()
+    dmri_image = nib.load(data_file)
+    print("Loaded affine: " + str(time.time() - start))
+    return dmri_image.affine
 
 
 def load_aparc(data_fs_seg):
@@ -140,9 +119,11 @@ def create_wm_mask(aparc):
     return wm_mask
 
 
-def create_callosal_mask(aparc):
+def create_callosal_mask(data_fs_seg):
     # Create the callosal mask
     start = time.time()
+    aparc_im = nib.load(data_fs_seg)
+    aparc = aparc_im.get_data()
     callosal_regions = [255, 254, 253]
     callosum = np.zeros(aparc.shape)
     for c in callosal_regions:
@@ -152,6 +133,9 @@ def create_callosal_mask(aparc):
     return callosum
 
 
+# bvals = np.loadtxt(data_bval,delimiter=',')
+# bvecs = np.loadtxt(data_bvec).T
+
 def create_gradient_table(data_bval, data_bvec):
     # Create the gradient table from the bvals and bvecs
     start = time.time()
@@ -160,6 +144,7 @@ def create_gradient_table(data_bval, data_bvec):
     end = time.time()
     print('Created Gradient Table: ' + str((end - start)))
     return gtab
+
 
 ##The deterministic model##
 
@@ -172,6 +157,7 @@ def create_CSA_model(gtab):
     print('Creating CSA Model: ' + str((end - start)))
     return csa_model
 
+
 def create_peaks(model, dmri, wm_mask):
     # Find the peaks from the CSA model
     peaks = peaks_from_model(model, dmri, default_sphere,
@@ -179,6 +165,7 @@ def create_peaks(model, dmri, wm_mask):
                              min_separation_angle=45,
                              mask=wm_mask)
     return peaks
+
 
 def create_classifier(peaks):
     # Restricts the fiber tracking to the restricted diffusion
@@ -197,6 +184,52 @@ def create_wm_seeds(wm_mask, affine):
     print('Created White Matter seeds: ' + str((end - start)))
     return seeds
 
+
+def compute_streamlines(peaks, classifier, seeds, affine):
+    # Initialization of LocalTracking. The computation happens in the next step.
+    start = time.time()
+    streamlines = LocalTracking(peaks, classifier, seeds, affine, step_size=.5)
+
+    # Compute streamlines and store as a list.
+    streamlines = list(streamlines)
+    print("Number of streamlines " + str(len(streamlines)))
+    end = time.time()
+    print("Computed streamlines " + str((end - start)))
+    return streamlines
+
+
+"""
+# Form an image with the streamlines
+color = line_colors(streamlines)
+print("Making pretty pictures")
+if fvtk.have_vtk:
+    streamlines_actor = fvtk.line(streamlines, line_colors(streamlines))
+
+    # Create the 3d display.
+    r = fvtk.ren()
+    fvtk.add(r, streamlines_actor)
+
+    # Save still images for this static example.
+    fvtk.record(r, n_frames=1, out_path='deterministic.png',
+                size=(800, 800))
+print ('Made pretty pictures')
+
+# Save it as a trk file for vis
+from dipy.io.* import save, Tractogram
+save(Tractogram(streamlines, affine), 'csa_detr.trk')
+save(Tractogram(streamlines, affine), 'csa_detr.trk')
+print('End the deterministic model')
+"""
+
+
+def create_trk(streamlines, affine, name):
+    start = time.time()
+    tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
+    save(tractogram, name + '.trk')
+    end = time.time()
+    print("Created the trk file: " + str((end - start)))
+
+
 ##The probabilistic model##
 
 def create_CSD_model(gtab, dmri):
@@ -208,17 +241,43 @@ def create_CSD_model(gtab, dmri):
     print ('Created the CSD model: ' + str((end - start)))
     return csd_model
 
+
+# def create_fit(model, dmri):
+#     start = time.time()
+#     csd_fit = model.fit(dmri, mask=wm_mask)
+#     end = time.time()
+#     print('Created the CSD model fit: ' (end-start))
+#     return csd_fit
+
 def prob_direction_getter(csd_model, dmri, wm_mask):
     # Set the Direction Getter to randomly choose directions
     start = time.time()
     csd_fit = csd_model.fit(dmri, mask=wm_mask)
-    print(type(csd_fit))
     prob_dg = ProbabilisticDirectionGetter.from_shcoeff(csd_fit.shm_coeff,
                                                         max_angle=30.,
                                                         sphere=default_sphere)
     end = time.time()
     print('Created the Direction Getter: ' + str((end - start)))
     return prob_dg
+
+
+"""
+# Prepare the display objects.
+color = line_colors(streamlines)
+print("Making pretty pictures")
+if fvtk.have_vtk:
+    streamlines_actor = fvtk.line(streamlines, line_colors(streamlines))
+
+    # Create the 3d display.
+    r = fvtk.ren()
+    fvtk.add(r, streamlines_actor)
+
+    # Save still images for this static example.
+    fvtk.record(r, n_frames=1, out_path='probabilistic.png',
+                size=(800, 800))
+print ('Made pretty pictures')
+"""
+
 
 def make_picture(name, streamlines):
     # Prepare the display objects.
@@ -238,26 +297,8 @@ def make_picture(name, streamlines):
     end = time.time()
     print ('Made pretty pictures: ' + str((end - start)))
 
-def compute_streamlines(peaks, classifier, seeds, affine):
-    # Initialization of LocalTracking. The computation happens in the next step.
-    start = time.time()
-    streamlines = LocalTracking(peaks, classifier, seeds, affine, step_size=.5)
-    print('Intialized Local Tracking: ' + str(time.time() - start))
-    # Compute streamlines and store as a list.
-    streamlines = list(streamlines)
-    print("Number of streamlines " + str(len(streamlines)))
-    end = time.time()
-    print("Computed streamlines " + str((end - start)))
-    return streamlines
 
-def create_trk(streamlines, affine, name):
-    start = time.time()
-    tractogram = Tractogram(streamlines, affine_to_rasmm=affine)
-    save(tractogram, name + '.trk')
-    end = time.time()
-    print("Created the trk file: " + str((end - start)))
-
-def main(det=False):
+def main(det):
     start = time.time()
     data_path = '/N/dc2/projects/lifebid/HCP7/108323/'
     data_file = data_path + 'original_hcp_data/Diffusion_7T/' + 'data.nii.gz'
@@ -269,9 +310,8 @@ def main(det=False):
     print('Set paths: ' + str(time.time() - start))
 
     # Load the data
-    dmri_image = load_dmri(data_file)
-    dmri = dmri_image.get_data()
-    affine = dmri_image.affine
+    dmri = load_dmri(data_file)
+    affine = load_affine(data_file)
     aparc = load_aparc(data_fs_seg)
 
     # Create masks
@@ -281,13 +321,14 @@ def main(det=False):
     # Create gradient table
     gtab = create_gradient_table(data_bval, data_bvec)
 
-    if det:
-        # Create CSA model & peaks
-        csa_model = create_CSA_model(gtab)
-        csa_peaks = create_peaks(csa_model, dmri, wm_mask)
+    # Create CSA model & peaks
+    csa_model = create_CSA_model(gtab)
+    csa_peaks = create_peaks(csa_model, dmri, wm_mask)
 
-        # Create classifier
-        classifier = create_classifier(csa_peaks)
+    # Create classifier
+    classifier = create_classifier(csa_peaks)
+
+    if det:
 
         # Create seeds
         seeds = create_wm_seeds(wm_mask, affine)
@@ -304,13 +345,9 @@ def main(det=False):
     else:
         # Create CSD model
         csd_model = create_CSD_model(gtab, dmri)
-        csd_peaks = create_peaks(csd_model, dmri, wm_mask)
 
         # Create the probabilistic direction getter
         prob_dg = prob_direction_getter(csd_model, dmri, wm_mask)
-
-        # Create classifier
-        classifier = create_classifier(csd_peaks)
 
         # Create seeds
         seeds = create_wm_seeds(wm_mask, affine)
@@ -328,4 +365,4 @@ def main(det=False):
     print('Finished!' + (end - start))
 
 
-main()
+main(det=False)
