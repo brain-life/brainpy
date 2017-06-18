@@ -1,0 +1,7 @@
+{
+    "data_file": "/N/dc2/projects/lifebid/HCP7/108323/original_hcp_data/Diffusion_7T/data.nii.gz",
+    "data_fs_seg": "/N/dc2/projects/lifebid/HCP/Brent/7t_rerun/freesurfer/7t_108323/mri/aparc+aseg.nii.gz",
+    "data_bvec": "/N/dc2/projects/lifebid/HCP7/108323/original_hcp_data/Diffusion_7T/bvecs",
+    "data_bval": "/N/dc2/projects/lifebid/HCP7/108323/original_hcp_data/Diffusion_7T/bvals"
+}
+
