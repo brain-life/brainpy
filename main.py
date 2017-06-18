@@ -27,12 +27,8 @@ def main():
     dmri_image = nib.load(config['data_file'])
     dmri = dmri_image.get_data()
     affine = dmri_image.affine
-    #brainmask_im = nib.load(config['data_brainmask'])
-    #brainmask = brainmask_im.get_data()
-    #bm_affine = brainmask_im.affine
     aparc_im = nib.load(config['data_fs_seg'])
     aparc = aparc_im.get_data()
-    #aparc_affine = brainmask_im.affine
     end = time.time()
     print('Loaded Files: ' + str((end - start)))
 
