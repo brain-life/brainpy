@@ -129,7 +129,4 @@ def prob_model(data_file, data_bvec, data_bval, data_fs_seg, data_brainmask):
 
     print ('Made pretty pictures')
 
-
-
-
 prob_model(data_file, data_bvec, data_bval, data_fs_seg, data_brainmask)
