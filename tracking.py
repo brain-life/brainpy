@@ -16,6 +16,7 @@ from dipy.reconst.csdeconv import (ConstrainedSphericalDeconvModel,
                                    auto_response)
 from dipy.direction import ProbabilisticDirectionGetter
 
+
 data_path = '/N/dc2/projects/lifebid/HCP7/108323/'
 data_file = data_path + 'original_hcp_data/Diffusion_7T/' + 'data.nii.gz'
 data_bvec = data_path + 'original_hcp_data/Diffusion_7T/' + 'bvecs'
